@@ -11,8 +11,24 @@ crontab_validation(){
 
     echo "Updating cron..."
     for job in "${cron_jobs[@]}"; do
-        crontab -l 2>/dev/null | grep -Fq "$job" || (crontab -l 2>/dev/null; echo "$job") | crontab -
+
+        current_crontab=$(crontab -l 2>/dev/null)
+
+        [ -z "$current_crontab" ] && current_crontab=""
+
+        echo "$current_crontab" | grep -Fq "$job"
+        
+        if [ $? -ne 0 ]; then
+            
+            if [ -z "$current_crontab" ]; then
+                echo "$job" | crontab -
+            else
+                echo "$current_crontab" | (cat; echo "$job") | crontab -
+            fi
+        fi
     done
+
+
     echo "Cron updated."
 
     echo "Creating updated cron_tasks file..."
